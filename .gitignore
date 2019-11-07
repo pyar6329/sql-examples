@@ -14,5 +14,6 @@
 sql-examples
 docker/var/postgres
 docker/var/cockroach
+docker/var/cockroach/certs
 !.gitkeep
 
