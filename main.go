@@ -3,6 +3,7 @@ package main
 import (
     "log"
 	"time"
+	"strconv"
 	"math/rand"
 	"github.com/pkg/errors"
     _ "github.com/lib/pq"
@@ -16,6 +17,54 @@ type Post struct {
     Created time.Time `db:"created"`
 }
 
+type Execution struct {
+	CreateMultiplePost func(db *sqlx.DB, offset uint64, limit uint64, maxLine uint64, maxRetry uint64) error
+	GetPostByNumber func(db *sqlx.DB, number uint64) (*Post, error)
+	GetList func(db *sqlx.DB) ([]Post, error)
+}
+
+type ExecutionInterface interface {
+	RunGetList(*sqlx.DB) ([]Post, error)
+	RunGetPostByNumber(*sqlx.DB, uint64) (*Post, error)
+	RunCreateMultiplePost(*sqlx.DB, uint64, uint64, uint64, uint64) error
+}
+
+func (p *Execution) RunGetList(db *sqlx.DB) ([]Post, error) {
+	startTime := time.Now()
+	posts, err := p.GetList(db)
+	if err != nil {
+		return nil, err
+	}
+	endTime := time.Now()
+	duration := endTime.Sub(startTime).Seconds()
+	log.Printf("getList: %v seconds\n", duration)
+	return posts, nil
+}
+
+func (p *Execution) RunGetPostByNumber(db *sqlx.DB, number uint64) (*Post, error) {
+	startTime := time.Now()
+	post, err := p.GetPostByNumber(db, number)
+	if err != nil {
+		return nil, err
+	}
+	endTime := time.Now()
+	duration := endTime.Sub(startTime).Seconds()
+	log.Printf("getPostByNumber: %v seconds\n", duration)
+	return post, nil
+}
+
+func (p *Execution) RunCreateMultiplePost(db *sqlx.DB, offset uint64, limit uint64, maxLine uint64, maxRetry uint64) error {
+	startTime := time.Now()
+	err := p.CreateMultiplePost(db, offset, limit, maxLine, maxRetry)
+	if err != nil {
+		return err
+	}
+	endTime := time.Now()
+	duration := endTime.Sub(startTime).Seconds()
+	log.Printf("createMultiplePost: %v seconds\n", duration)
+	return nil
+}
+
 func main(){
 	db, err := sqlx.Connect("postgres", "user=pyar6329 dbname=examples sslmode=disable port=26257")
     if err != nil {
@@ -23,32 +72,27 @@ func main(){
 		return
     }
 
+	var e ExecutionInterface = &Execution{GetList: getList, GetPostByNumber: getPostByNumber, CreateMultiplePost: createMultiplePost}
 	var offset uint64 = 1
 	var limit uint64 = 1000
 	var maxLine uint64 = 1_000_000
 	var maxRetry uint64 = 10
+	err = e.RunCreateMultiplePost(db, offset, limit, maxLine, maxRetry)
+    if err != nil {
+        log.Fatalln(err)
+    }
 
-	for i, retry := offset, uint64(0); i < maxLine; {
-		if retry > maxRetry {
-			log.Fatalf("retry %v times, but cannot insert it. offset=%v\n", maxRetry, i)
-		}
-		if retry != 0 {
-			log.Printf("retry %v: offset=%v\n", retry, i)
-		}
-
-		posts := generatePostList(i, limit)
-		if err := bulkInsert(db, posts); err != nil {
-			retry++
-			continue
-		}
-
-		retry = 0
-		i += limit
+	post, err := e.RunGetPostByNumber(db, maxLine)
+	if err != nil {
+		log.Fatalln(err)
 	}
-
-	post := getPostByNumber(db, maxLine)
-	log.Println("finished insert")
 	log.Printf("id: %v, number: %v, timestamp: %v\n", post.Id, post.Number, post.Created.String())
+
+	// posts, err := e.RunGetList(db)
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// log.Printf("id: %v, number: %v, timestamp: %v\n", posts[0].Id, posts[0].Number, posts[0].Created.String())
 }
 
 func generateULID() string {
@@ -112,20 +156,47 @@ func bulkInsert(db *sqlx.DB, posts []*Post) (err error) {
 	return nil
 }
 
-func getPostByNumber(db *sqlx.DB, number uint64) Post {
-	p := Post{}
-	err := db.Get(&p, "select * from posts where number=$1", number)
-	if err != nil {
-		log.Printf("select was failed. number : %v\n", number)
+func createMultiplePost(db *sqlx.DB, offset uint64, limit uint64, maxLine uint64, maxRetry uint64) error {
+	for i, retry := offset, uint64(0); i < maxLine; {
+		if retry > maxRetry {
+			log.Printf("retry %v times, but cannot insert it. offset=%v\n", maxRetry, i)
+			return errors.New("multiple insert was failed")
+		}
+		if retry != 0 {
+			log.Printf("retry %v: offset=%v\n", retry, i)
+		}
+
+		posts := generatePostList(i, limit)
+		if err := bulkInsert(db, posts); err != nil {
+			retry++
+			continue
+		}
+
+		retry = 0
+		i += limit
 	}
-	return p
+	log.Println("finished insert")
+	return nil
 }
 
-func getList(db *sqlx.DB) []Post {
+func getPostByNumber(db *sqlx.DB, number uint64) (*Post, error) {
+	p := &Post{}
+	err := db.Get(p, "select * from posts where number=$1", number)
+	if err != nil {
+		errMessage := "select was failed. number : " + strconv.FormatUint(number, 10) + "\n"
+		log.Printf(errMessage)
+		return nil, errors.New(errMessage)
+	}
+	return p, nil
+}
+
+func getList(db *sqlx.DB) ([]Post, error) {
 	posts := []Post{}
 	err := db.Select(&posts, "select * from posts order by created asc")
 	if err != nil {
-        log.Println("select was failed")
+		errMessage := "select was failed"
+        log.Println(errMessage)
+		return nil, errors.New(errMessage)
 	}
-	return posts
+	return posts, nil
 }
