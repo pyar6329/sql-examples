@@ -12,5 +12,4 @@
 *.out
 
 sql-examples
-!.gitkeep
-
+!/**/.gitkeep
