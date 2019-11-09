@@ -10,7 +10,7 @@ help: ## show this help message.
 .PHONY: up
 up: ## docker-compose up -d
 	@cd docker && \
-	docker-compose down && \
+	docker-compose down -v && \
 	docker-compose up -d
 	@make cockroach-admin
 	@make cockroach-init
@@ -18,13 +18,25 @@ up: ## docker-compose up -d
 .PHONY: down
 down: ## docker-compose down
 	@cd docker && \
-	docker-compose down
+	docker-compose down -v
 
 .PHONY: all-clean
 all-clean: ## reset persistent
-	@make down
 	@make cockroach-clean
 	@make postgres-clean
+	@make down
+
+.PHONY: cockroach-up
+cockroach-up: ## start CockroachDB
+	@cd docker && \
+	docker-compose up -d cockroach-master cockroach-node1 cockroach-node2 cockroach-node3
+	@make cockroach-init
+	@make cockroach-admin
+
+.PHONY: cockroach-down
+cockroach-down: ## stop CockroachDB
+	@cd docker && \
+	docker-compose rm -vsf cockroach-master cockroach-node1 cockroach-node2 cockroach-node3
 
 .PHONY: cockroach-init
 cockroach-init: ## create database and user (don't have password)
@@ -47,9 +59,39 @@ cockroach-admin: ## open cockroach admin page
 
 .PHONY: cockroach-clean
 cockroach-clean: ## remove persistent data for CockroachDB
+	@make cockroach-down
 	@rm -rf docker/var/cockroach/data_* docker/var/cockroach/certs
+
+.PHONY: postgres-up
+postgres-up: ## start PostgreSQL
+	@cd docker && \
+	docker-compose up -d postgres
+
+.PHONY: postgres-down
+postgres-down: ## stop PostgreSQL
+	@cd docker && \
+	docker-compose rm -vsf postgres
 
 .PHONY: postgres-clean
 postgres-clean: ## remove persistent data for PostgreSQL
+	@make postgres-down
 	@rm -rf docker/var/postgres/data
+
+.PHONY: keydb-up
+keydb-up: ## start KeyDB (Multi Thread Redis)
+	@cd docker && \
+	docker-compose up -d keydb
+
+.PHONY: keydb-down
+keydb-down: ## stop KeyDB (Multi Thread Redis)
+	@cd docker && \
+	docker-compose rm -vsf keydb
+
+.PHONY: redis-up
+redis-up: ## start KeyDB (Multi Thread Redis)
+	@make keydb-up
+
+.PHONY: redis-down
+redis-down: ## stop KeyDB (Multi Thread Redis)
+	@make keydb-down
 
