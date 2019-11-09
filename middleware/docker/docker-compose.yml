@@ -1,35 +1,50 @@
 version: '3.7'
 services:
   postgres:
+    restart: always
     build: ./postgres
     container_name: sql-examples-postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     networks:
       sql-examples:
         aliases:
           - sql-examples-postgres
     volumes:
-      - ./var/postgres/data:/var/lib/postgresql/data
+      - ./var/postgres/data:/var/lib/postgresql/data:delegated
     environment:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --locale=C.UTF-8
     ports:
       - "5432:5432"
   cockroach-master:
+    restart: always
     image: cockroachdb/cockroach:v19.1.5 
     container_name: sql-examples-cockroach-master
     command: start --insecure
     # command: start --certs-dir=/certs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sL http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     networks:
       sql-examples:
         aliases:
           - master.sql-examples-cockroach
     volumes:
-      - ./var/cockroach/data_master:/cockroach/cockroach-data
-      # - ./var/cockroach/certs:/certs
+      - ./var/cockroach/data_master:/cockroach/cockroach-data:delegated
+      # - ./var/cockroach/certs:/certs:cached
     ports:
       - "26257:26257"
       - "8080:8080"
   cockroach-node1:
+    restart: always
     image: cockroachdb/cockroach:v19.1.5 
     container_name: sql-examples-cockroach-node1
     depends_on:
@@ -37,19 +52,20 @@ services:
     command: start --insecure --join=master.sql-examples-cockroach
     # command: start --certs-dir=/certs --join=master.sql-examples-cockroach
     healthcheck:
-      test: ["CMD-SHELL", "curl -sL http://localhost:8080/health || exit 1"] # exitコードは 0 or 1 に揃えておく。
-      interval: 60s     # ヘルスチェックは1分に1度ぐらいに押さえておきたい
-      timeout: 5s       # 応答が5秒以上かかっても許さない
-      retries: 3          # 3回ぐらい失敗応答したら許さない
-      start_period: 30s # 立ち上がるのに、30秒かかりそう
+      test: ["CMD-SHELL", "curl -sL http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     networks:
       sql-examples:
         aliases:
           - node1.sql-examples-cockroach
     volumes:
-      - ./var/cockroach/data_node1:/cockroach/cockroach-data
-      # - ./var/cockroach/certs:/certs
+      - ./var/cockroach/data_node1:/cockroach/cockroach-data:delegated
+      # - ./var/cockroach/certs:/certs:cached
   cockroach-node2:
+    restart: always
     image: cockroachdb/cockroach:v19.1.5 
     container_name: sql-examples-cockroach-node2
     depends_on:
@@ -57,19 +73,20 @@ services:
     command: start --insecure --join=master.sql-examples-cockroach
     # command: start --certs-dir=/certs --join=master.sql-examples-cockroach
     healthcheck:
-      test: ["CMD-SHELL", "curl -sL http://localhost:8080/health || exit 1"] # exitコードは 0 or 1 に揃えておく。
-      interval: 60s     # ヘルスチェックは1分に1度ぐらいに押さえておきたい
-      timeout: 5s       # 応答が5秒以上かかっても許さない
-      retries: 3          # 3回ぐらい失敗応答したら許さない
-      start_period: 30s # 立ち上がるのに、30秒かかりそう
+      test: ["CMD-SHELL", "curl -sL http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     networks:
       sql-examples:
         aliases:
           - node2.sql-examples-cockroach
     volumes:
-      - ./var/cockroach/data_node2:/cockroach/cockroach-data
-      # - ./var/cockroach/certs:/certs
+      - ./var/cockroach/data_node2:/cockroach/cockroach-data:delegated
+      # - ./var/cockroach/certs:/certs:cached
   cockroach-node3:
+    restart: always
     image: cockroachdb/cockroach:v19.1.5 
     container_name: sql-examples-cockroach-node3
     depends_on:
@@ -77,17 +94,34 @@ services:
     command: start --insecure --join=master.sql-examples-cockroach
     # command: start --certs-dir=/certs --join=master.sql-examples-cockroach
     healthcheck:
-      test: ["CMD-SHELL", "curl -sL http://localhost:8080/health || exit 1"] # exitコードは 0 or 1 に揃えておく。
-      interval: 60s     # ヘルスチェックは1分に1度ぐらいに押さえておきたい
-      timeout: 5s       # 応答が5秒以上かかっても許さない
-      retries: 3          # 3回ぐらい失敗応答したら許さない
-      start_period: 30s # 立ち上がるのに、30秒かかりそう
+      test: ["CMD-SHELL", "curl -sL http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     networks:
       sql-examples:
         aliases:
           - node3.examples-cockroach
     volumes:
-      - ./var/cockroach/data_node3:/cockroach/cockroach-data
-      # - ./var/cockroach/certs:/certs
+      - ./var/cockroach/data_node3:/cockroach/cockroach-data:delegated
+      # - ./var/cockroach/certs:/certs:cached
+  keydb:
+    restart: always
+    image: eqalpha/keydb:x86_64_v5.1.1
+    container_name: sql-examples-keydb
+    command: keydb-server --port 6379 --bind 0.0.0.0 --save "" --appendonly no
+    healthcheck:
+      test: ["CMD-SHELL", "keydb-cli ping || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      sql-examples:
+        aliases:
+          - sql-examples-keydb
+    ports:
+      - "6379:6379"
 networks:
   sql-examples:
