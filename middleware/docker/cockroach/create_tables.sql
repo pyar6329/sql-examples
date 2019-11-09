@@ -1,3 +1,4 @@
+use examples;
 create table if not exists posts (
   id string not null primary key,
   number serial not null,
