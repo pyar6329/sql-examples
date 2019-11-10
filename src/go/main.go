@@ -66,17 +66,20 @@ func (p *Execution) RunCreateMultiplePost(db *sqlx.DB, offset uint64, limit uint
 }
 
 func main(){
-	db, err := sqlx.Connect("postgres", "user=pyar6329 dbname=examples sslmode=disable port=26257")
+	db, err := sqlx.Connect("postgres", "user=postgres password=postgres dbname=examples sslmode=disable port=5432")
+	// db, err := sqlx.Connect("postgres", "user=pyar6329 dbname=examples sslmode=disable port=26257")
     if err != nil {
         log.Println("DB connection errored")
 		return
     }
 
 	var e ExecutionInterface = &Execution{GetList: getList, GetPostByNumber: getPostByNumber, CreateMultiplePost: createMultiplePost}
-	var offset uint64 = 1
+	// var offset uint64 = 1
+	var offset uint64 = 9364001
 	var limit uint64 = 1000
-	var maxLine uint64 = 1_000_000
-	var maxRetry uint64 = 10
+	// var maxLine uint64 = 1_000_000
+	var maxLine uint64 = 10_000_000
+	var maxRetry uint64 = 20
 	err = e.RunCreateMultiplePost(db, offset, limit, maxLine, maxRetry)
     if err != nil {
         log.Fatalln(err)
