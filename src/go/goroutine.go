@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-func main() {
+func foo() {
 	maxSize := 1_000_000
 	wg := &sync.WaitGroup{}
 	queue := make(chan int, 1)

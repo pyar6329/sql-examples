@@ -4,7 +4,7 @@ import (
 	"log"
 )
 
-func main() {
+func bar() {
 	maxSize := 1_000_000
 	slice := []int{}
 

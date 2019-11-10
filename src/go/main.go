@@ -9,6 +9,7 @@ import (
     _ "github.com/lib/pq"
     "github.com/jmoiron/sqlx"
 	"github.com/oklog/ulid/v2"
+	"sync"
 )
 
 type Post struct {
@@ -18,7 +19,7 @@ type Post struct {
 }
 
 type Execution struct {
-	CreateMultiplePost func(db *sqlx.DB, offset uint64, limit uint64, maxLine uint64, maxRetry uint64) error
+	CreateMultiplePost func(cnnPool chan *sqlx.DB, offset uint64, limit uint64, maxLine uint64, maxRetry uint64)
 	GetPostByNumber func(db *sqlx.DB, number uint64) (*Post, error)
 	GetList func(db *sqlx.DB) ([]Post, error)
 }
@@ -26,7 +27,7 @@ type Execution struct {
 type ExecutionInterface interface {
 	RunGetList(*sqlx.DB) ([]Post, error)
 	RunGetPostByNumber(*sqlx.DB, uint64) (*Post, error)
-	RunCreateMultiplePost(*sqlx.DB, uint64, uint64, uint64, uint64) error
+	RunCreateMultiplePost(chan *sqlx.DB, uint64, uint64, uint64, uint64)
 }
 
 func (p *Execution) RunGetList(db *sqlx.DB) ([]Post, error) {
@@ -53,43 +54,41 @@ func (p *Execution) RunGetPostByNumber(db *sqlx.DB, number uint64) (*Post, error
 	return post, nil
 }
 
-func (p *Execution) RunCreateMultiplePost(db *sqlx.DB, offset uint64, limit uint64, maxLine uint64, maxRetry uint64) error {
+func (p *Execution) RunCreateMultiplePost(cnnPool chan *sqlx.DB, offset uint64, limit uint64, maxLine uint64, maxRetry uint64) {
 	startTime := time.Now()
-	err := p.CreateMultiplePost(db, offset, limit, maxLine, maxRetry)
-	if err != nil {
-		return err
-	}
+	p.CreateMultiplePost(cnnPool, offset, limit, maxLine, maxRetry)
 	endTime := time.Now()
 	duration := endTime.Sub(startTime).Seconds()
 	log.Printf("createMultiplePost: %v seconds\n", duration)
-	return nil
 }
 
 func main(){
-	db, err := sqlx.Connect("postgres", "user=postgres password=postgres dbname=examples sslmode=disable port=5432")
-	// db, err := sqlx.Connect("postgres", "user=pyar6329 dbname=examples sslmode=disable port=26257")
-    if err != nil {
-        log.Println("DB connection errored")
-		return
-    }
+	maxConnectionSize := 80
+	cnnPool := make(chan *sqlx.DB, maxConnectionSize)
+	for i:= 0; i < cap(cnnPool); i++ {
+		db, err := sqlx.Connect("postgres", "user=postgres password=postgres dbname=examples sslmode=disable port=5432")
+		// db, err := sqlx.Connect("postgres", "user=root dbname=examples sslmode=disable port=26257")
+		if err != nil {
+			log.Println("DB connection errored")
+			return
+		}
+		cnnPool <- db
+	}
+	defer close(cnnPool)
 
 	var e ExecutionInterface = &Execution{GetList: getList, GetPostByNumber: getPostByNumber, CreateMultiplePost: createMultiplePost}
-	// var offset uint64 = 1
-	var offset uint64 = 9364001
+	var offset uint64 = 1
 	var limit uint64 = 1000
-	// var maxLine uint64 = 1_000_000
 	var maxLine uint64 = 10_000_000
-	var maxRetry uint64 = 20
-	err = e.RunCreateMultiplePost(db, offset, limit, maxLine, maxRetry)
-    if err != nil {
-        log.Fatalln(err)
-    }
-
+	var maxRetry uint64 = 30
+	e.RunCreateMultiplePost(cnnPool, offset, limit, maxLine, maxRetry)
+	db := <-cnnPool
 	post, err := e.RunGetPostByNumber(db, maxLine)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	log.Printf("id: %v, number: %v, timestamp: %v\n", post.Id, post.Number, post.Created.String())
+	cnnPool <- db
 
 	// posts, err := e.RunGetList(db)
 	// if err != nil {
@@ -124,34 +123,35 @@ func generatePostList(offset uint64, limit uint64) []*Post {
 }
 
 func bulkInsert(db *sqlx.DB, posts []*Post) (err error) {
-	tx, err := db.Beginx()
-	if err != nil {
-		log.Println("transaction creating was failed")
-		return err
-	}
+	// tx, err := db.Beginx()
+	// if err != nil {
+	// 	log.Println("transaction creating was failed")
+	// 	return err
+	// }
+    //
+	// defer func() {
+    //     if r := recover(); r != nil {
+	// 		if ro := tx.Rollback(); ro != nil {
+	// 			err = errors.Wrap(err, ro.Error())
+	// 		}
+	// 		log.Println("defer recover() was failed")
+	// 		panic(r)
+    //     } else if err != nil {
+	// 		if ro := tx.Rollback(); ro != nil {
+	// 			log.Println("rollback transaction was failed")
+	// 			err = errors.Wrap(err, ro.Error())
+	// 		}
+	// 		log.Println("rollback transaction")
+    //     } else {
+	// 		if co := tx.Commit(); co != nil {
+	// 			err = errors.Wrap(err, co.Error())
+	// 			log.Println("commit was failed")
+	// 		}
+    //     }
+	// }()
 
-	defer func() {
-        if r := recover(); r != nil {
-			if ro := tx.Rollback(); ro != nil {
-				err = errors.Wrap(err, ro.Error())
-			}
-			log.Println("defer recover() was failed")
-			panic(r)
-        } else if err != nil {
-			if ro := tx.Rollback(); ro != nil {
-				log.Println("rollback transaction was failed")
-				err = errors.Wrap(err, ro.Error())
-			}
-			log.Println("rollback transaction")
-        } else {
-			if co := tx.Commit(); co != nil {
-				err = errors.Wrap(err, co.Error())
-				log.Println("commit was failed")
-			}
-        }
-	}()
-
-	_, err = tx.NamedExec(`insert into posts (id,number,created) values (:id,:number,:created)`, posts)
+	// _, err = tx.NamedExec(`insert into posts (id,number,created) values (:id,:number,:created)`, posts)
+	_, err = db.NamedExec(`insert into posts (id,number,created) values (:id,:number,:created)`, posts)
 	if err != nil {
 		log.Println("bulk insert was failed")
 		return err
@@ -159,27 +159,40 @@ func bulkInsert(db *sqlx.DB, posts []*Post) (err error) {
 	return nil
 }
 
-func createMultiplePost(db *sqlx.DB, offset uint64, limit uint64, maxLine uint64, maxRetry uint64) error {
-	for i, retry := offset, uint64(0); i < maxLine; {
-		if retry > maxRetry {
-			log.Printf("retry %v times, but cannot insert it. offset=%v\n", maxRetry, i)
-			return errors.New("multiple insert was failed")
-		}
-		if retry != 0 {
-			log.Printf("retry %v: offset=%v\n", retry, i)
-		}
-
+func createMultiplePost(cnnPool chan *sqlx.DB, offset uint64, limit uint64, maxLine uint64, maxRetry uint64) {
+	wg := &sync.WaitGroup{}
+	for i := offset; i < maxLine; {
 		posts := generatePostList(i, limit)
-		if err := bulkInsert(db, posts); err != nil {
-			retry++
-			continue
-		}
-
-		retry = 0
+		wg.Add(1)
+		cnn := <-cnnPool
+		go func(cnnPool chan *sqlx.DB, db *sqlx.DB, posts []*Post, offset uint64, maxRetry uint64){
+			defer func() {
+				cnnPool <- cnn
+				wg.Done()
+			}()
+			retryInsert(db, posts, offset, maxRetry)
+		}(cnnPool, cnn, posts, offset, maxRetry)
 		i += limit
 	}
+	wg.Wait()
 	log.Println("finished insert")
-	return nil
+}
+
+func retryInsert(db *sqlx.DB, posts []*Post, offset uint64, maxRetry uint64) {
+	for i := uint64(0); i < maxRetry; i++ {
+		if i > maxRetry {
+			log.Printf("retry %v times, but cannot insert it. offset=%v\n", maxRetry, i)
+		}
+		if i != 0 {
+			log.Printf("retry %v: offset=%v\n", i, offset)
+		}
+
+		err := bulkInsert(db, posts)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Duration(i) * time.Second)
+	}
 }
 
 func getPostByNumber(db *sqlx.DB, number uint64) (*Post, error) {
