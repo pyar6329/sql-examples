@@ -1,0 +1,10 @@
+development:
+  dialect: postgres
+  database: {{ envOr "DEV_DATABASE_NAME" "foo" }}
+  user: {{ envOr "DEV_DATABASE_USER" "postgres" }}
+  password: {{ envOr "DEV_DATABASE_PASSWORD" "postgres" }}
+  host: {{ envOr "DEV_DATABASE_HOST" "127.0.0.1" }}
+  port: {{ envOr "DEV_DATABASE_PORT" "5432" }}
+  pool: 5
+  options:
+    sslmode: disable
