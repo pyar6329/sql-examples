@@ -1,0 +1,54 @@
+version: 2.1
+executors:
+  sqlint:
+    docker:
+      - image: pyar6329/sqlint:0.1.9
+  sql-migrate:
+    docker:
+      - image: pyar6329/sql-migrate:1.0.0
+        environment:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: example
+      - image: circleci/postgres:12-alpine-ram
+        environment:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: example
+          POSTGRES_INITDB_ARGS: --encoding=UTF-8
+jobs:
+  build:
+    executor: sqlint
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: check SQL syntax
+          command: |
+            find . -name "*.sql" | xargs -I {} -n1 sqlint {}
+  migration:
+    executor: sql-migrate
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Waiting for Postgres to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgres && exit 1
+      - run:
+          name: apply schema to DB
+          command: |
+            sql-migrate up -env="test"
+            sql-migrate down -env="test"
+workflows:
+  version: 2
+  verification:
+    jobs:
+      - build
+      - migration:
+          requires:
+            - build
