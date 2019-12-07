@@ -1,0 +1,29 @@
+name: Haskell CI
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        ghc: ['8.6.4']
+        cabal: ['3.0']
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+    - name: Setup Haskell
+      uses: actions/setup-haskell@v1
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: ${{ matrix.cabal }}
+    - uses: mstksg/setup-stack@v1
+    - name: Install dependencies
+      run: |
+        stack --system-ghc build --only-dependencies --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
+    - name: Build binary
+      run: |
+        stack --system-ghc install --local-bin-path=./bin --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
+    - name: Run tests
+      run: stack test --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
