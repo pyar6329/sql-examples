@@ -29,6 +29,9 @@ jobs:
         stack --system-ghc build --only-dependencies --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
     - name: Build binary
       run: |
+        cd src/haskell
         stack --system-ghc install --local-bin-path=./bin --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
     - name: Run tests
-      run: stack test --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
+      run: |
+        cd src/haskell
+        stack test --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
