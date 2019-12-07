@@ -42,6 +42,7 @@ jobs:
       - run:
           name: apply schema to DB
           command: |
+            cd migration
             sql-migrate up -env="test"
             sql-migrate down -env="test"
 workflows:
