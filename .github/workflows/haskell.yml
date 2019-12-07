@@ -9,6 +9,7 @@ jobs:
       matrix:
         ghc: ['8.6.4']
         cabal: ['3.0']
+        cache-version: ["v4"]
     steps:
     - uses: actions/checkout@v1
       with:
@@ -21,6 +22,7 @@ jobs:
     - uses: mstksg/setup-stack@v1
     - name: Install dependencies
       run: |
+        cd src/haskell
         stack --system-ghc build --only-dependencies --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
     - name: Build binary
       run: |
