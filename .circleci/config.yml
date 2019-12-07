@@ -40,11 +40,11 @@ jobs:
             done
             echo Failed waiting for Postgres && exit 1
       - run:
-          name: apply schema to DB
+          name: check applying schema to DB
           command: |
-            cd migration
-            sql-migrate up -env="test"
-            sql-migrate down -env="test"
+            cd ~/repo/migration
+            sql-migrate up -env="circleci" -limit=0
+            sql-migrate down -env="circleci" -limit=0
 workflows:
   version: 2
   verification:
