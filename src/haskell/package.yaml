@@ -10,17 +10,21 @@ description: 'Please see the README on GitHub at <https://github.com/pyar6329/sq
 
 extra-source-files:
   - README.md
+  - package.yaml
 
 dependencies:
   - 'base >= 4.7 && < 5'
+  - dhall
   - esqueleto
+  - lens
+  - monad-control
+  - monad-logger
+  - mtl
   - persistent
   - persistent-postgresql
   - persistent-template
   - text
   - time
-  - sort
-  - split
 
 library:
   source-dirs: src
@@ -37,7 +41,7 @@ executables:
       - sql-example
 
 tests:
-  sql-example-test:
+  test:
     main: Spec.hs
     source-dirs: test
     ghc-options:

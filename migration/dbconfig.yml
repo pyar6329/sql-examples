@@ -1,6 +1,7 @@
 development:
   dialect: postgres
-  datasource: host=${DEV_DATABASE_HOST} user=postgres password=postgres dbname=foo sslmode=disable
+  # datasource: host=localhost user=postgres password=postgres dbname=haskell sslmode=disable
+  datasource: host=localhost user=postgres password=postgres dbname=example sslmode=disable
   dir: db
   table: schema_migrations
 circleci:

@@ -8,4 +8,8 @@ build: ## run stack build
 
 .PHONY: test
 test: ## run hspec
-	@stack test --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
+	@ENV=test stack test --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
+
+.PHONY: execute
+execute: ## run main.hs
+	@ENV=dev stack runghc -- -i=src -- app/Main.hs
