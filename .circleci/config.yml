@@ -23,7 +23,7 @@ jobs:
       - run:
           name: check SQL syntax
           command: |
-            find . -name "*.sql" | xargs -I {} -n1 sqlint {}
+            find migration -name "*.sql" | xargs -I {} -n1 sqlint {}
   migration:
     executor: sql-migrate
     working_directory: ~/repo
