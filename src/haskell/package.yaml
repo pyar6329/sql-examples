@@ -34,11 +34,9 @@ executables:
     main: Main.hs
     source-dirs: app
     ghc-options:
-      - '-O2'
-      - '-Wall -fno-warn-unused-imports'
       - '-threaded'
       - '-rtsopts'
-      - '-with-rtsopts="-A16m -M64m -N"'
+      - '-with-rtsopts=-N'
     dependencies:
       - sql-example
 
