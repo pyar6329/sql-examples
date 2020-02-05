@@ -32,13 +32,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pantry-
 
-    - name: Move .stack/pantry to temp
-      uses: matsubara0507/actions/move-files@master
-      with:
-        source_dir: ~/.stack-temp/pantry
-        source_files: |
-          pantry
-        target_dir: ~/.stack
+    - name: Restore from ~/.stack-temp/pantry to ~/.stack/pantry
+      run: |
+        if [ ! -e ~/.stack-temp ]; then
+          mkdir -p ~/.stack-temp
+        fi
+        mv ~/.stack-temp/pantry ~/.stack/pantry
 
     - name: install dependent packages
       run: |
@@ -58,6 +57,25 @@ jobs:
       run: |
         cd src/haskell
         stack --system-ghc build --test --no-run-tests --only-dependencies --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
+
+    - name: Debug cache
+      run: |
+        du -sh ~/.stack
+        du -sh ~/.stack*
+        ls -la ~/.stack/
+
+    - name: Save cache ~/.stack/pantry to ~/.stack-temp/pantry
+      run: |
+        mv ~/.stack/pantry ~/.stack-temp/pantry
+ 
+    - name: Debug cache
+      run: |
+        du -sh ~/.stack
+        du -sh ~/.stack*
+        ls -la ~/.stack/
+        ls -la ~/.stack-temp/
+        du -sh ~/.stack-temp/*
+
     # - name: Run tests
     #   run: |
     #     cd src/haskell
