@@ -49,10 +49,6 @@ jobs:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: ${{ matrix.cabal }}
 
-    - name: debug remove
-      run: |
-        rm -rf ~/.stack ~/.tmp
-
     - name: setup stack
       run: |
         if [ ! -e /usr/local/bin/stack ]; then
@@ -77,8 +73,7 @@ jobs:
     #   run: |
     #     cd src/haskell
     #     stack --system-ghc test --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
-    # - name: Build binary
-    #   run: |
-    #     cd src/haskell
-    #     stack --system-ghc install --local-bin-path=./bin
-    #
+    - name: Build binary
+      run: |
+        cd src/haskell
+        stack --system-ghc install --local-bin-path=./bin --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
