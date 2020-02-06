@@ -14,67 +14,93 @@ jobs:
     - uses: actions/checkout@v1
       with:
         fetch-depth: 1
-    - name: Cache .stack
-      id: cache-stack
-      uses: actions/cache@v1
-      with:
-        path: ~/.stack
-        key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}-${{ matrix.cache-version }}
-        restore-keys: |
-          ${{ runner.os }}-stack-
-
-    - name: Cache .stack/pantry
-      id: cache-pantry
-      uses: actions/cache@v1
-      with:
-        path: ~/.stack-temp/pantry
-        key: ${{ runner.os }}-pantry-${{ hashFiles('**/stack.yaml.lock') }}-${{ matrix.cache-version }}
-        restore-keys: |
-          ${{ runner.os }}-pantry-
-
-    - name: Restore from ~/.stack-temp/pantry to ~/.stack/pantry
-      run: |
-        if [ ! -e ~/.stack-temp ]; then
-          mkdir -p ~/.stack-temp
-        fi
-        mv ~/.stack-temp/pantry ~/.stack/pantry
-
-    - name: install dependent packages
-      run: |
-        sudo apt-get install -y libpq-dev
-    - name: Setup Haskell
-      uses: actions/setup-haskell@v1
-      with:
-        ghc-version: ${{ matrix.ghc }}
-        cabal-version: ${{ matrix.cabal }}
-    - uses: mstksg/setup-stack@v1
-    - name: Debug cache
-      run: |
-        du -sh ~/.stack
-        du -sh ~/.stack*
-        ls -la ~/.stack/
-    - name: Install dependencies
-      run: |
-        cd src/haskell
-        stack --system-ghc build --test --no-run-tests --only-dependencies --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
-
-    - name: Debug cache
-      run: |
-        du -sh ~/.stack
-        du -sh ~/.stack*
-        ls -la ~/.stack/
-
-    - name: Save cache ~/.stack/pantry to ~/.stack-temp/pantry
-      run: |
-        mv ~/.stack/pantry ~/.stack-temp/pantry
+    # - name: Cache .stack
+    #   id: cache-stack
+    #   uses: actions/cache@v1
+    #   with:
+    #     path: ~/.stack
+    #     key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}-${{ matrix.cache-version }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-stack-
+    #
+    # - name: Cache .stack/pantry
+    #   id: cache-pantry
+    #   uses: actions/cache@v1
+    #   with:
+    #     path: ~/.tmp
+    #     key: ${{ runner.os }}-pantry-${{ hashFiles('**/stack.yaml.lock') }}-${{ matrix.cache-version }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-pantry-
+    #
+    # - name: Restore from ~/.tmp/pantry to ~/.stack/pantry
+    #   run: |
+    #     if [ ! -e ~/.tmp ]; then
+    #       mkdir -p ~/.tmp
+    #     fi
+    #     if [ ! -e ~/.tmp/bin ]; then
+    #       mkdir -p ~/.tmp/bin
+    #     fi
+    #     if [ ! -e ~/.local/bin ]; then
+    #       mkdir -p ~/.local/bin
+    #     fi
+    #     mv ~/.tmp/pantry ~/.stack/pantry
+    #     mv ~/.tmp/bin/* ~/.local/bin
+    #
+    # - name: install dependent packages
+    #   run: |
+    #     sudo apt-get install -y libpq-dev
+    # - name: Setup Haskell
+    #   uses: actions/setup-haskell@v1
+    #   with:
+    #     ghc-version: ${{ matrix.ghc }}
+    #     cabal-version: ${{ matrix.cabal }}
+    # # - uses: mstksg/setup-stack@v1
+    # - name: setup stack
+    #   run: |
+    #     if [ ! -e ~/.local/bin ]; then
+    #       mkdir -p ~/.local/bin
+    #     fi
+    #     if [ ! -e ~/.local/bin/stack ]; then
+    #       curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin */stack
+    #     fi
+    #     stack update
+    # - name: Debug cache
+    #   run: |
+    #     du -sh ~/.stack
+    #     du -sh ~/.stack*
+    #     ls -la ~/.stack/
+    # - name: Install dependencies
+    #   run: |
+    #     cd src/haskell
+    #     stack --system-ghc build --test --no-run-tests --only-dependencies --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
+    #
+    # - name: Debug cache
+    #   run: |
+    #     du -sh ~/.stack
+    #     du -sh ~/.stack*
+    #     ls -la ~/.stack/
+    #
+    # - name: Save cache ~/.stack/pantry to ~/.tmp/pantry
+    #   run: |
+    #     mv ~/.stack/pantry ~/.tmp/pantry
+    #
+    # - name: Save cache ~/.local/bin/stack to ~/.tmp/bin
+    #   run: |
+    #     mv ~/.local/bin/stack ~/.tmp/bin/stack
  
     - name: Debug cache
       run: |
-        du -sh ~/.stack
-        du -sh ~/.stack*
-        ls -la ~/.stack/
-        ls -la ~/.stack-temp/
-        du -sh ~/.stack-temp/*
+        echo $PATH
+        pwd
+        ls -l ~/
+
+    # - name: Debug cache
+    #   run: |
+    #     du -sh ~/.stack
+    #     du -sh ~/.stack*
+    #     ls -la ~/.stack/
+    #     ls -la ~/.tmp/
+    #     du -sh ~/.tmp/*
 
     # - name: Run tests
     #   run: |
