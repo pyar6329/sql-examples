@@ -38,6 +38,9 @@ jobs:
         if [ -e ~/.tmp/pantry ]; then
           mv ~/.tmp/pantry ~/.stack/pantry
         fi
+        if [ -e ~/.tmp/.stack-work ]; then
+          mv ~/.tmp/.stack-work src/haskell/.stack-work
+        fi
 
     - name: install dependent packages
       run: |
@@ -54,12 +57,13 @@ jobs:
         if [ ! -e /usr/local/bin/stack ]; then
           curl -sL https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C /usr/local/bin */stack
         fi
-        stack update
+        stack --no-terminal update
 
     - name: Install dependencies
       run: |
         cd src/haskell
-        stack --system-ghc build --test --no-run-tests --only-dependencies --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
+        stack --system-ghc --no-terminal build --test --no-run-tests --only-dependencies --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
+        # stack --system-ghc --no-terminal build --test --no-run-tests --only-dependencies --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
 
     - name: Save cache ~/.stack/pantry to ~/.tmp/pantry
       run: |
@@ -68,12 +72,13 @@ jobs:
         fi
 
         mv ~/.stack/pantry ~/.tmp/pantry
+        mv ~/.stack-work ~/.tmp/.stack-work
 
     # - name: Run tests
     #   run: |
     #     cd src/haskell
-    #     stack --system-ghc test --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
-    - name: Build binary
-      run: |
-        cd src/haskell
-        stack --system-ghc install --local-bin-path=./bin --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
+    #     stack --system-ghc --no-terminal test --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
+    # - name: Build binary
+    #   run: |
+    #     cd src/haskell
+    #     stack --system-ghc --no-terminal install --local-bin-path=./bin --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
