@@ -69,7 +69,7 @@ jobs:
     - name: Build binary
       run: |
         cd src/haskell
-        stack --system-ghc --no-terminal install --local-bin-path=./bin --ghc-options "-O2 -Wall -fno-warn-unused-imports -optl-static -optl-pthread -fPIC -optc-Os -threaded"
+        stack --system-ghc --no-terminal install --local-bin-path=./bin --ghc-options "-O2 -Wall -fno-warn-unused-imports -threaded -rtsopts -with-rtsopts=-N"
 
     - name: Save cache ~/.stack/pantry to ~/.tmp/pantry
       run: |
