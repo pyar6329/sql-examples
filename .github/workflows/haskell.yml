@@ -45,7 +45,8 @@ jobs:
     - name: install dependent packages
       run: |
         rm -rf src/haskell/.stack-work
-        sudo apt-get install -y libpq-dev
+        sudo apt-get install -y libpq-dev 
+        sudo apt --reinstall install -y libgmpxx4ldbl
 
     - name: Setup Haskell
       uses: actions/setup-haskell@v1
