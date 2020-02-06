@@ -10,6 +10,8 @@ jobs:
         ghc: ['8.6.4']
         cabal: ['3.0']
         cache-version: ["v4"]
+    env:
+      PATH: ~/.local/bin:${PATH}
     steps:
     - uses: actions/checkout@v1
       with:
@@ -93,6 +95,7 @@ jobs:
         echo $PATH
         pwd
         ls -l ~/
+        echo $HOME
 
     # - name: Debug cache
     #   run: |
