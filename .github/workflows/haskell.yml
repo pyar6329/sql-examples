@@ -39,7 +39,7 @@ jobs:
           mv ~/.tmp/pantry ~/.stack/pantry
         fi
         if [ -e ~/.tmp/bin ]; then
-          mv ~/.tmp/bin/* /usr/local/bin
+          cp ~/.tmp/bin/* /usr/local/bin
         fi
 
     - name: install dependent packages
