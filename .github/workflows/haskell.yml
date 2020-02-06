@@ -52,6 +52,10 @@ jobs:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: ${{ matrix.cabal }}
 
+    - name: debug remove
+      run: |
+        rm -rf ~/.stack ~/.tmp
+
     - name: setup stack
       run: |
         if [ ! -e /usr/local/bin/stack ]; then
