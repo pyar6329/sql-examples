@@ -79,6 +79,7 @@ jobs:
 
         mv ~/.stack/pantry ~/.tmp/pantry
         mv src/haskell/.stack-work ~/.tmp/.stack-work
+        echo "aaaa"
 
     # - name: Run tests
     #   run: |
