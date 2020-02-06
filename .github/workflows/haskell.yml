@@ -38,9 +38,6 @@ jobs:
         if [ -e ~/.tmp/pantry ]; then
           mv ~/.tmp/pantry ~/.stack/pantry
         fi
-        if [ -e ~/.tmp/bin ]; then
-          cp ~/.tmp/bin/* /usr/local/bin
-        fi
 
     - name: install dependent packages
       run: |
@@ -70,15 +67,12 @@ jobs:
 
     - name: Save cache ~/.stack/pantry to ~/.tmp/pantry
       run: |
+        if [ ! -e ~/.tmp ]; then
+          mkdir -p ~/.tmp
+        fi
+
         mv ~/.stack/pantry ~/.tmp/pantry
 
-    - name: Save cache /usr/local/bin/stack to ~/.tmp/bin
-      run: |
-        if [ ! -e ~/.tmp/bin ]; then
-          mkdir -p ~/.tmp/bin
-        fi
-        cp -rf /usr/local/bin/stack ~/.tmp/bin/stack
- 
     # - name: Run tests
     #   run: |
     #     cd src/haskell
