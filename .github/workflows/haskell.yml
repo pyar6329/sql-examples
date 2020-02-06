@@ -84,4 +84,4 @@ jobs:
 
     - name: debug
       run: |
-        du -sh ~/.local/bin/* 
+        du -sh src/haskell/bin/* 
