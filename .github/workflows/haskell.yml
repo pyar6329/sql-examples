@@ -10,8 +10,8 @@ jobs:
         ghc: ['8.6.4']
         cabal: ['3.0']
         cache-version: ["v4"]
-    env:
-      PATH: ~/.local/bin:${PATH}
+    # env:
+    #   PATH: ~/.local/bin:/usr/share/rust/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
     steps:
     - uses: actions/checkout@v1
       with:
@@ -57,6 +57,12 @@ jobs:
     #     ghc-version: ${{ matrix.ghc }}
     #     cabal-version: ${{ matrix.cabal }}
     # # - uses: mstksg/setup-stack@v1
+    - name: setup stack
+      run: |
+        if [ ! -e /usr/local/bin/stack ]; then
+          curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C /usr/local/bin */stack
+        fi
+        stack update
     # - name: setup stack
     #   run: |
     #     if [ ! -e ~/.local/bin ]; then
@@ -96,6 +102,7 @@ jobs:
         pwd
         ls -l ~/
         echo $HOME
+        which stack
 
     # - name: Debug cache
     #   run: |
