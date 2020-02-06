@@ -9,38 +9,38 @@ jobs:
       matrix:
         ghc: ['8.6.4']
         cabal: ['3.0']
-        cache-version: ["v4"]
+        cache-version: ['1.0']
     steps:
     - uses: actions/checkout@v1
       with:
         fetch-depth: 1
 
-    # - name: Cache .stack
-    #   id: cache-stack
-    #   uses: actions/cache@v1
-    #   with:
-    #     path: ~/.stack
-    #     key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}-${{ matrix.cache-version }}
-    #     restore-keys: |
-    #       ${{ runner.os }}-stack-
-    #
-    # - name: Cache .stack/pantry
-    #   id: cache-pantry
-    #   uses: actions/cache@v1
-    #   with:
-    #     path: ~/.tmp
-    #     key: ${{ runner.os }}-pantry-${{ hashFiles('**/stack.yaml.lock') }}-${{ matrix.cache-version }}
-    #     restore-keys: |
-    #       ${{ runner.os }}-pantry-
-    #
-    # - name: Restore from ~/.tmp/pantry to ~/.stack/pantry
-    #   run: |
-    #     if [ -e ~/.tmp/pantry ]; then
-    #       mv ~/.tmp/pantry ~/.stack/pantry
-    #     fi
-    #     if [ -e ~/.tmp/bin ]; then
-    #       mv ~/.tmp/bin/* /usr/local/bin
-    #     fi
+    - name: Cache .stack
+      id: cache-stack
+      uses: actions/cache@v1
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}-${{ matrix.cache-version }}
+        restore-keys: |
+          ${{ runner.os }}-stack-
+
+    - name: Cache .stack/pantry
+      id: cache-pantry
+      uses: actions/cache@v1
+      with:
+        path: ~/.tmp
+        key: ${{ runner.os }}-pantry-${{ hashFiles('**/stack.yaml.lock') }}-${{ matrix.cache-version }}
+        restore-keys: |
+          ${{ runner.os }}-pantry-
+
+    - name: Restore from ~/.tmp/pantry to ~/.stack/pantry
+      run: |
+        if [ -e ~/.tmp/pantry ]; then
+          mv ~/.tmp/pantry ~/.stack/pantry
+        fi
+        if [ -e ~/.tmp/bin ]; then
+          mv ~/.tmp/bin/* /usr/local/bin
+        fi
 
     - name: install dependent packages
       run: |
@@ -64,9 +64,9 @@ jobs:
         cd src/haskell
         stack --system-ghc build --test --no-run-tests --only-dependencies --fast -j0 --ghc-options "-dynamic +RTS -A128m -RTS"
 
-    # - name: Save cache ~/.stack/pantry to ~/.tmp/pantry
-    #   run: |
-    #     mv ~/.stack/pantry ~/.tmp/pantry
+    - name: Save cache ~/.stack/pantry to ~/.tmp/pantry
+      run: |
+        mv ~/.stack/pantry ~/.tmp/pantry
 
     - name: Save cache /usr/local/bin/stack to ~/.tmp/bin
       run: |
